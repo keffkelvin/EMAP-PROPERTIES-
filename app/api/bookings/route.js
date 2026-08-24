@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { supabasePublic, supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 import { isAuthenticated } from "@/lib/auth";
 
+// A valid Postgres UUID looks like 8-4-4-4-12 hex characters.
+// Fallback listing IDs (e.g. "fallback-kizingo") are not real UUIDs and
+// would crash the insert if sent through — treat them as "no listing picked"
+// instead of failing the whole booking.
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Public: create a booking from the site-visit widget
 export async function POST(request) {
   const body = await request.json();
@@ -18,10 +24,12 @@ export async function POST(request) {
     );
   }
 
+  const safeListingId = listing_id && UUID_PATTERN.test(listing_id) ? listing_id : null;
+
   const { data, error } = await supabasePublic
     .from("bookings")
     .insert([{
-      listing_id: listing_id || null,
+      listing_id: safeListingId,
       buyer_name,
       buyer_phone,
       buyer_email,
@@ -35,7 +43,9 @@ export async function POST(request) {
 
   if (error) {
     console.error("Failed to create booking:", error.message);
-    return NextResponse.json({ error: "Could not save booking. Please try again." }, { status: 500 });
+    // Surfacing the real message (not just a generic one) so setup issues
+    // are visible without needing to dig through Vercel logs.
+    return NextResponse.json({ error: `Could not save booking: ${error.message}` }, { status: 500 });
   }
 
   return NextResponse.json({ booking: data });

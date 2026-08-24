@@ -44,7 +44,12 @@ export default function PropertyCard({ listing }) {
               <div className="text-[10.5px] text-inkSoft">{listing.price_note}</div>
             )}
           </div>
-          <div className="text-xs font-bold text-oceanDeep">View &rarr;</div>
+          <a
+            href={`?listing=${listing.id}#book`}
+            className="text-xs font-bold text-oceanDeep hover:underline"
+          >
+            View &rarr;
+          </a>
         </div>
         <div className="mt-3">
           <MapPin latitude={listing.latitude} longitude={listing.longitude} name={listing.name} />

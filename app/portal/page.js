@@ -3,6 +3,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase";
 import { getListings } from "@/lib/getListings";
 import AddListingForm from "@/components/AddListingForm";
+import ListingRow from "@/components/ListingRow";
 import LogoutButton from "@/components/LogoutButton";
 
 async function getBookings() {
@@ -34,7 +35,7 @@ export default async function PortalDashboard() {
     redirect("/portal/login");
   }
 
-  const [bookings, listings] = await Promise.all([getBookings(), getListings()]);
+  const [bookings, { listings, usingFallback, error: listingsError }] = await Promise.all([getBookings(), getListings()]);
 
   return (
     <div className="min-h-screen bg-sand">
@@ -56,6 +57,14 @@ export default async function PortalDashboard() {
           </div>
         )}
 
+        {isSupabaseConfigured && usingFallback && (
+          <div className="bg-coral/10 border border-coral/30 text-coralDeep text-sm rounded-lg p-4 mb-6">
+            Supabase is connected but the listings query is failing, so the site is showing
+            placeholder data instead of your real listings. This is very likely why bookings
+            are failing too. Error detail: <code className="text-xs">{listingsError}</code>
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-serif text-lg font-semibold">Listings ({listings.length})</h2>
           <AddListingForm />
@@ -65,17 +74,7 @@ export default async function PortalDashboard() {
           {listings.length === 0 ? (
             <p className="text-sm text-inkSoft p-4">No listings yet.</p>
           ) : (
-            listings.map((l) => (
-              <div key={l.id} className="flex justify-between items-center px-4 py-3 border-b border-ink/5 last:border-0 text-sm">
-                <div>
-                  <span className="font-semibold">{l.name}</span>
-                  <span className="text-inkSoft"> &middot; {l.location}</span>
-                </div>
-                <span className="font-mono text-xs text-inkSoft">
-                  KSh {Number(l.price_ksh).toLocaleString()}
-                </span>
-              </div>
-            ))
+            listings.map((l) => <ListingRow key={l.id} listing={l} />)
           )}
         </div>
 

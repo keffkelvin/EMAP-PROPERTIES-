@@ -3,8 +3,14 @@ import PropertyCard from "@/components/PropertyCard";
 import BookingWidget from "@/components/BookingWidget";
 import { getListings } from "@/lib/getListings";
 
+// Without this, Next.js pre-renders the homepage once at build time and
+// caches it — meaning listings added later through the portal wouldn't
+// show up until the next deploy. This forces a fresh database check on
+// every visit instead.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
-  const listings = await getListings();
+  const { listings, usingFallback } = await getListings();
   const plots = listings.filter((l) => l.type === "plot");
   const bungalows = listings.filter((l) => l.type === "bungalow");
   const stays = listings.filter((l) => l.type === "stay");
@@ -53,9 +59,11 @@ export default async function HomePage() {
           </div>
 
           {bookableListings.length > 0 ? (
-            <BookingWidget listings={bookableListings} />
+            <div id="book" className="scroll-mt-24">
+              <BookingWidget listings={bookableListings} />
+            </div>
           ) : (
-            <div className="bg-white border border-ink/10 rounded-2xl p-6 text-sm text-inkSoft">
+            <div id="book" className="bg-white border border-ink/10 rounded-2xl p-6 text-sm text-inkSoft scroll-mt-24">
               No bookable listings yet — add some in the agent portal to activate the booking widget.
             </div>
           )}

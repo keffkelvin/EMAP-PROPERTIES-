@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 function nextDays(count) {
   const days = [];
@@ -14,6 +15,7 @@ function nextDays(count) {
 }
 
 export default function BookingWidget({ listings }) {
+  const searchParams = useSearchParams();
   const dates = useMemo(() => nextDays(8), []);
   const [listingId, setListingId] = useState(listings[0]?.id || "");
   const [mode, setMode] = useState("virtual");
@@ -24,6 +26,15 @@ export default function BookingWidget({ listings }) {
   const [budget, setBudget] = useState("");
   const [status, setStatus] = useState("idle"); // idle | submitting | success | error
   const [errorMsg, setErrorMsg] = useState("");
+
+  // If someone clicked "View" on a listing card, arrive here with it
+  // already selected instead of defaulting to the first one.
+  useEffect(() => {
+    const requested = searchParams.get("listing");
+    if (requested && listings.some((l) => l.id === requested)) {
+      setListingId(requested);
+    }
+  }, [searchParams, listings]);
 
   async function handleSubmit(e) {
     e.preventDefault();
